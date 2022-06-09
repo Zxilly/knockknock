@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const GOOGLE = "https://bbc.com"
+const BBC = "https://bbc.com"
 
 var err error
 
@@ -51,6 +51,7 @@ func main() {
 			input := c.Args().Get(0)
 			if input == "" {
 				fmt.Println("no input")
+				os.Exit(1)
 			}
 			var host string
 			var port = 443
@@ -77,7 +78,7 @@ func main() {
 					},
 				},
 			}
-			_, err = client.Get(GOOGLE)
+			_, err = client.Get(BBC)
 			if err != nil {
 				netErr, ok := err.(net.Error)
 				if !ok {
