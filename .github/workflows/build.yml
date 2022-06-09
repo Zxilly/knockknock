@@ -1,27 +1,55 @@
-name: CI
+name: Release
 
 on:
   push:
     branches: [ master ]
 
 jobs:
-  build:
+  releases-matrix:
+    name: Release Go Binary
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64]
+        include:
+          - goos: windows
+            goarch: amd64
+            goamd64: v3
+          - goos: linux
+            goarch: amd64
+            goamd64: v3
+          - goos: darwin
+            goarch: amd64
+            goamd64: v3
+          - goos: windows
+            goarch: amd64
+            goamd64: v1
+          - goos: linux
+            goarch: amd64
+            goamd64: v1
+          - goos: darwin
+            goarch: amd64
+            goamd64: v1
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: amd64
+            goos: linux
+          - goarch: amd64
+            goos: darwin
+          - goarch: amd64
+            goos: windows
+
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
+      - uses: wangyoucao577/go-release-action@master
         with:
-          go-version: 1.18
-
-      - name: Build
-        run: go build -v github.com/Zxilly/knockknock
-
-      - name: Release
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          files: knockknock knockknock.*
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goamd64: ${{ matrix.goamd64 }}
+          release_tag: latest
+          executable_compression: upx
+          binary_name: kk

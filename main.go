@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/urfave/cli/v2"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -18,6 +20,29 @@ const GOOGLE = "https://bbc.com"
 
 var err error
 
+func http2errno(v error) uintptr {
+	if rv := reflect.ValueOf(v); rv.Kind() == reflect.Uintptr {
+		return uintptr(rv.Uint())
+	}
+	return 0
+}
+
+func isRSTError(errno syscall.Errno) bool {
+	const WSAECONNRESET = 10054
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "windows" {
+		if http2errno(errno) == WSAECONNRESET {
+			return true
+		}
+		return false
+	} else {
+		if errno == syscall.ECONNRESET {
+			return true
+		}
+		return false
+	}
+}
+
 func main() {
 	app := &cli.App{
 		Name:  "kk",
@@ -25,7 +50,7 @@ func main() {
 		Action: func(c *cli.Context) error {
 			input := c.Args().Get(0)
 			if input == "" {
-				log.Fatal("no input")
+				fmt.Println("no input")
 			}
 			var host string
 			var port = 443
@@ -38,7 +63,7 @@ func main() {
 			} else {
 				host = input
 			}
-			log.Println("Testing " + host + ":" + strconv.Itoa(port))
+			fmt.Println("Testing " + host + ":" + strconv.Itoa(port))
 
 			dialer := &net.Dialer{
 				Timeout: 5 * time.Second,
@@ -56,10 +81,10 @@ func main() {
 			if err != nil {
 				netErr, ok := err.(net.Error)
 				if !ok {
-					log.Println("Unexpected error.\n" + err.Error())
+					fmt.Println("Unexpected error.\n" + err.Error())
 				}
 				if netErr.Timeout() {
-					log.Println("Seems blocked.")
+					fmt.Println("Seems blocked.")
 				} else {
 					urlErr, ok := err.(*url.Error)
 					if !ok {
@@ -69,22 +94,22 @@ func main() {
 					if !ok {
 						return err
 					}
-					switch t := opErr.Err.(type) {
-					case *os.SyscallError:
-						if errno, ok := t.Err.(syscall.Errno); ok {
-							switch errno {
-							case syscall.WSAECONNRESET:
-								fallthrough
-							case syscall.ECONNRESET:
-								log.Println("Seems OK.")
-								return nil
-							}
-						}
+					syscallErr, ok := opErr.Err.(*os.SyscallError)
+					if !ok {
+						return err
+					}
+					syscallErrNo, ok := syscallErr.Err.(syscall.Errno)
+					if !ok {
+						return err
+					}
+					if isRSTError(syscallErrNo) {
+						fmt.Println("Seems OK.")
+						return nil
 					}
 					return err
 				}
 			} else {
-				log.Println("Seems you have ignored wall, not working.")
+				fmt.Println("Seems you have ignored wall, not working.")
 			}
 
 			return nil
@@ -93,6 +118,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
