@@ -51,5 +51,4 @@ jobs:
           goarch: ${{ matrix.goarch }}
           goamd64: ${{ matrix.goamd64 }}
           release_tag: latest
-          executable_compression: upx
           binary_name: kk
