@@ -52,3 +52,4 @@ jobs:
           goamd64: ${{ matrix.goamd64 }}
           release_tag: latest
           binary_name: kk
+          overwrite: true
