@@ -2,7 +2,7 @@ module github.com/Zxilly/knockknock
 
 go 1.18
 
-require github.com/urfave/cli/v2 v2.11.1
+require github.com/urfave/cli/v2 v2.11.2
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
