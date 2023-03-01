@@ -53,3 +53,5 @@ jobs:
           release_tag: latest
           binary_name: kk
           overwrite: true
+          build_flags: -trimpath
+          ldflags: -s -w
